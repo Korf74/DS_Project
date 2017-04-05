@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 05. Apr 2017 16:04
 %%%-------------------------------------------------------------------
--module(tripleRing).
+-module(tripletRing).
 -author("remi").
 
 %% API

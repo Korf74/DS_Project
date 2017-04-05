@@ -13,11 +13,11 @@
 -export([work/1]).
 
 addingNode(PEER, PID) ->
-  PID ! {become, self(), tripleRing, work, [PEER, self()]},
+  PID ! {become, self(), tripletRing, work, [PEER, self()]},
   receive
     {connected, PID} ->
-      PEER ! {become, self(), tripleRing, work, [self(), PID]},
-      tripleRing:work(PID, PEER)
+      PEER ! {become, self(), tripletRing, work, [self(), PID]},
+      tripletRing:work(PID, PEER)
   end.
 
 idle(PEER) ->
