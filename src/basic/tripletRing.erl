@@ -10,15 +10,20 @@
 -author("remi").
 
 %% API
--export([work/2]).
+-export([work/2, start/2]).
+
+start(NEXT, PREV) ->
+  monitor(process, NEXT),
+  monitor(process, PREV),
+  work(NEXT, PREV).
 
 addingNode(NEXT, PREV, PID) ->
-  PID ! {become, self(), genRing, work, [PREV, NEXT, self(), PREV]},
+  PID ! {become, self(), genRing, start, [PREV, NEXT, self(), PREV]},
   receive
     {connected, PID} ->
-      NEXT ! {become, self(), genRing, work, [self(), PREV, PID, self()]},
-      PREV ! {become, self(), genRing, work, [PID, self(), NEXT, PID]},
-      genRing:work(NEXT, PID, PREV, NEXT)
+      NEXT ! {become, self(), genRing, start, [self(), PREV, PID, self()]},
+      PREV ! {become, self(), genRing, start, [PID, self(), NEXT, PID]},
+      genRing:start(NEXT, PID, PREV, NEXT)
   end.
 
 idle(NEXT, PREV) ->

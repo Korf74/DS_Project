@@ -10,7 +10,10 @@
 -author("remi").
 
 %% API
--export([idle/0]).
+-export([start/0, idle/0]).
+
+start() ->
+  spawn(?MODULE, idle, []).
 
 idle() ->
   receive

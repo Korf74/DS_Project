@@ -10,14 +10,18 @@
 -author("remi").
 
 %% API
--export([work/1]).
+-export([work/1, start/1]).
+
+start(PID) ->
+  monitor(process, PID),
+  work(PID).
 
 addingNode(PEER, PID) ->
-  PID ! {become, self(), tripletRing, work, [PEER, self()]},
+  PID ! {become, self(), tripletRing, start, [PEER, self()]},
   receive
     {connected, PID} ->
-      PEER ! {become, self(), tripletRing, work, [self(), PID]},
-      tripletRing:work(PID, PEER)
+      PEER ! {become, self(), tripletRing, start, [self(), PID]},
+      tripletRing:start(PID, PEER)
   end.
 
 idle(PEER) ->

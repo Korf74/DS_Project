@@ -10,12 +10,15 @@
 -author("remi").
 
 %% API
--export([work/0]).
+-export([start/0, work/0]).
+
+start() ->
+  spawn(?MODULE, work, []).
 
 addingNode(PID) ->
-  PID ! {become, self(), pairRing, work, [self()]},
+  PID ! {become, self(), pairRing, start, [self()]},
   receive
-    {connected, PID} -> pairRing:work(PID)
+    {connected, PID} -> pairRing:start(PID)
   end.
 
 work() ->

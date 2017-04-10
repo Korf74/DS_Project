@@ -10,8 +10,14 @@
 -author("remi").
 
 %% API
--export([work/4]).
+-export([work/4, start/4]).
 
+start(NNEXT, NEXT, PREV, PPREV) ->
+  monitor(process, NNEXT),
+  monitor(process, NEXT),
+  monitor(process, PREV),
+  monitor(process, PPREV),
+  work(NNEXT, NEXT, PREV, PPREV).
 
 addingNode(NNEXT, NEXT, PREV, PPREV, PID) ->
   receive
