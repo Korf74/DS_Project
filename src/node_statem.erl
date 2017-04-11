@@ -12,7 +12,7 @@
 -behaviour(gen_statem).
 
 %% API
--export([start_link/0, connectTo/1, disconnect/0]).
+-export([start_link/0, start_ring/0, start_link1/0, connectTo/1, disconnect/0]).
 
 %% gen_statem callbacks
 -export([
@@ -47,8 +47,13 @@
 %%%===================================================================
 
 start_link() ->
+  % to change to {local/global, ?SERVER}
   {ok, PID} = gen_statem:start_link(?MODULE, [], []),
   PID.
+
+start_link1() ->
+  % to change to {local/global, ?SERVER}
+  gen_statem:start_link(?MODULE, [], []).
 
 connectTo(Pid) ->
   gen_statem:cast(self(), {connectTo, Pid}),
@@ -57,6 +62,9 @@ connectTo(Pid) ->
 disconnect() ->
   io:fwrite("~p disconnecting~n", [self()]),
   gen_statem:cast(self(), stop).
+
+start_ring() ->
+  gen_statem:cast(self(), start).
 
 
 
@@ -68,6 +76,7 @@ callback_mode() ->
   state_functions.
 
 init([]) ->
+  io:fwrite("~p : init~n", [self()]),
   {ok, idle, #singletonState{}}.
 
 %%--------------------------------------------------------------------
@@ -190,12 +199,21 @@ work(cast, stop, State) ->
   io:fwrite("~p : received stop~n", [self()]),
   handle_event(cast, stop, State);
 
+%% for testing
 work(cast, {testToken, Init}, State) ->
   handle_message({testToken, Init}, State),
   stop;
 
-work(cast, Msg, State) ->
+work(cast, {testScatter, Msgs}, State) ->
+  handle_message({testScatter, Msgs}, State),
+  stop;
+
+work(cast, {broadcast, Msg}, State) ->
   handle_message(Msg, State),
+  keep_state_and_data;
+
+work(cast, {scatter, Msgs}, State) ->
+  handle_message(Msgs, State),
   keep_state_and_data.
 
 addingNode(cast, {connected, Pid}, [OldState, NewState]) ->
@@ -252,7 +270,27 @@ handle_message({testToken, Init}, #tripletState{next=Next}) ->
 
 handle_message({testToken, Init}, #genState{next=Next}) ->
   gen_statem:cast(Next, {testToken, Init}),
-  Init ! {testTokenAck, self()}.
+  Init ! {testTokenAck, self()};
+
+handle_message({testScatter, []}, State) ->
+  ok;
+
+handle_message({testScatter, [Top | Msgs]}, State) ->
+  io:fwrite("~p : received test scatter with top \"~p\"~n", [self(), Top]),
+  case State of
+    #singletonState{} ->
+      gen_statem:cast(self(), {testScatter, Msgs});
+
+    #pairState{peer=Peer} ->
+      gen_statem:cast(Peer, {testScatter, Msgs});
+
+    #tripletState{next=Next, prev=Prev} ->
+      gen_statem:cast(Next, {testScatter, Msgs});
+
+    #genState{nnext=Nnext, next=Next, prev=Prev, pprev=Pprev} ->
+      gen_statem:cast(Next, {testScatter, Msgs})
+  end.
+
 
 handle_event({call, From}, insertion_request, #singletonState{}) ->
   gen_statem:reply(From, {become, work, #pairState{peer=self()}}),

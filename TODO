@@ -1,3 +1,4 @@
 - Add supervisors
 - What to do when neighbour died ?
 - Handle exceptions for calls
+- Change start_link

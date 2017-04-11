@@ -11,6 +11,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/include" type="erlang-include" />
+      <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
     <orderEntry type="jdk" jdkName="Erlang 19" jdkType="Erlang SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

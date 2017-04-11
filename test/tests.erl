@@ -10,7 +10,8 @@
 -author("remi").
 
 %% API
--export([broadcast/1, broadcast1/1, remove/1, remove_and_send_token/1]).
+-export([broadcast/1, broadcast1/1, remove/1,
+  remove_and_send_token/1, test_scatter/1, test_supervisor/0]).
 
 init_ring(N) -> PID = singletonRing:start(),
   init_ring(N - 1, PID).
@@ -77,4 +78,17 @@ remove_and_send_token(NODES) ->
   gen_statem:cast(Pid, stop),
   gen_statem:cast(First, {testToken, self()}).
   %waitTestTokenAcks(NODES - 1).
+
+test_msg(0) -> [];
+
+test_msg(N) ->
+  [N | test_msg(N - 1)].
+
+test_scatter(NODES) ->
+  {First, Pid} = init_ring1(NODES),
+  gen_statem:cast(Pid, {testScatter, test_msg(NODES / 2)}),
+  gen_statem:cast(Pid, {testScatter, test_msg(NODES) / 2}).
+
+test_supervisor() ->
+  node_supervisor:start_link().
 
