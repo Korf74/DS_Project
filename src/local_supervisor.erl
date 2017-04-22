@@ -12,7 +12,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0, add_node/0, start_ring/0]).
+-export([start_link/0, add_node/0, start_ring/0, add_data/1, request_data/1, size/0]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -34,6 +34,21 @@ add_node() ->
 
 start_ring() ->
   {ok, Pid} = supervisor:start_child(?MODULE, [singleton]).
+
+add_data(Data) ->
+  [{_, Pid, _, _} | _] = supervisor:which_children(?MODULE),
+  [{_, ChildPid, _, _} | _] = supervisor:which_children(Pid),
+  gen_statem:call(ChildPid, {newData, Data}).
+
+request_data(Uid) ->
+  [{_, Pid, _, _} | _] = supervisor:which_children(?MODULE),
+  [{_, ChildPid, _, _} | _] = supervisor:which_children(Pid),
+  gen_statem:call(ChildPid, {requestData, Uid}).
+
+size() ->
+  [{_, Pid, _, _} | _] = supervisor:which_children(?MODULE),
+  [{_, ChildPid, _, _} | _] = supervisor:which_children(Pid),
+  gen_statem:call(ChildPid, size).
 
 %%--------------------------------------------------------------------
 %% @doc

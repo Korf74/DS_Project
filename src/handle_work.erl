@@ -61,6 +61,20 @@ handle({call, From}, {removingNode, NodeState}, State) ->
 handle({call, From}, insertion_request, State) ->
   handle_event:handle({call, From}, insertion_request, State);
 
+handle({call, From}, {newData, Data}, State) ->
+  Uid = handle_message:handle({newData, Data}, State),
+  NewState = stateDataUpdate(State, Uid),
+  gen_statem:reply(From, Uid),
+  {keep_state, NewState};
+
+handle({call, From}, {requestData, Uid}, State) ->
+  handle_message:handle({requestData, From, [], Uid}, State),
+  keep_state_and_data;
+
+handle({call, From}, size, State) ->
+  handle_message:handle({size, From, 0, []}, State),
+  keep_state_and_data;
+
 handle(cast, stop, State) ->
   io:fwrite("~p : received stop~n", [self()]),
   handle_event:handle(cast, stop, State);
@@ -74,10 +88,21 @@ handle(cast, {testScatter, Msgs}, State) ->
   handle_message:handle({testScatter, Msgs}, State),
   stop;
 
-handle(cast, {broadcast, Msg}, State) ->
+% Normal messages, i.e. that don't need state or topology change
+handle(cast, Msg, State) ->
   handle_message:handle(Msg, State),
-  keep_state_and_data;
-
-handle(cast, {scatter, Msgs}, State) ->
-  handle_message:handle(Msgs, State),
   keep_state_and_data.
+
+%% INTERNAL
+stateDataUpdate(State=#singletonState{data=Data}, Uid) ->
+  State#singletonState{data=[Uid | Data]};
+
+stateDataUpdate(State=#pairState{data=Data}, Uid) ->
+  State#pairState{data=[Uid | Data]};
+
+stateDataUpdate(State=#tripletState{data=Data}, Uid) ->
+  State#tripletState{data=[Uid | Data]};
+
+stateDataUpdate(State=#genState{data=Data}, Uid) ->
+  State#genState{data=[Uid | Data]}.
+

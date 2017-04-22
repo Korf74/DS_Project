@@ -12,7 +12,7 @@
 -behaviour(application).
 
 % API
--export([addNode/0, startRing/0]).
+-export([addNode/0, startRing/0, addData/1, requestData/1, size/0]).
 
 %% Application callbacks
 -export([start/2,
@@ -29,6 +29,15 @@ addNode() ->
 
 startRing() ->
   local_supervisor:start_ring().
+
+addData(Data) ->
+  local_supervisor:add_data(Data).
+
+requestData(Uid) ->
+  local_supervisor:request_data(Uid).
+
+size() ->
+  local_supervisor:size().
 
 %%%===================================================================
 %%% Application callbacks

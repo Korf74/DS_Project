@@ -9,18 +9,18 @@
 -author("remi").
 
 -record(singletonState, {
-  data=#{}
+  data=[]
 }).
 
 -record(pairState, {
   peer,
-  data=#{}
+  data=[]
 }).
 
 -record(tripletState, {
   next,
   prev,
-  data=#{}
+  data=[]
 }).
 
 -record(genState, {
@@ -28,5 +28,5 @@
   next=self(),
   prev=self(),
   pprev=self(),
-  data=#{}
+  data=[]
 }).
