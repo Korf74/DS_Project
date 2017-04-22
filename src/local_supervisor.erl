@@ -4,24 +4,36 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 11. Apr 2017 11:08
+%%% Created : 19. Apr 2017 11:00
 %%%-------------------------------------------------------------------
--module(node_supervisor).
+-module(local_supervisor).
 -author("remi").
 
 -behaviour(supervisor).
 
 %% API
--export([start_link/0, start_link/1, start_link_singleton/0, connectTo/1, disconnect/0, start_ring/0]).
+-export([start_link/0, add_node/0, start_ring/0]).
 
 %% Supervisor callbacks
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
 
+%% Helper macro for declaring children of supervisor
+-define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
+
 %%%===================================================================
 %%% API functions
 %%%===================================================================
+add_node() ->
+  [{_, Pid, _, _} | _] = supervisor:which_children(?MODULE),
+  [{_, ChildPid, _, _} | _] = supervisor:which_children(Pid),
+  Ret = supervisor:start_child(?MODULE, [ChildPid]),
+  io:fwrite("test~n"),
+  Ret.
+
+start_ring() ->
+  {ok, Pid} = supervisor:start_child(?MODULE, [singleton]).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -34,25 +46,6 @@
 start_link() ->
   %supervisor:start_link({local, ?SERVER}, ?MODULE, []).
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
-
-start_link(singleton) ->
-  supervisor:start_link(?MODULE, [singleton]);
-
-start_link(Pid) ->
-  supervisor:start_link(?MODULE, [Pid]).
-
-start_link_singleton() ->
-  supervisor:start_link({local, ?MODULE}, ?MODULE, [singleton]).
-
-connectTo(Pid) ->
-  whereis(child) ! connectTo(Pid).
-
-disconnect() ->
-  whereis(child) ! stop.
-
-start_ring() ->
-  io:fwrite("~p~n", [whereis(node_statem)]),
-  gen_statem:cast(whereis(node_statem), start).
 
 %%%===================================================================
 %%% Supervisor callbacks
@@ -75,9 +68,8 @@ start_ring() ->
   }} |
   ignore |
   {error, Reason :: term()}).
-
-init([singleton]) ->
-  RestartStrategy = one_for_one,
+init([]) ->
+  RestartStrategy = simple_one_for_one,
   MaxRestarts = 1000,
   MaxSecondsBetweenRestarts = 3600,
 
@@ -85,31 +77,12 @@ init([singleton]) ->
 
   Restart = transient, % restart only if error
   Shutdown = 2000,
-  Type = worker,
+  Type = supervisor,
 
-  AChild = {child, {node_statem, start_link_singleton, []},
-    Restart, Shutdown, Type, [node_statem]},
-
-  {ok, {SupFlags, [AChild]}};
-
-
-init([Pid]) ->
-  RestartStrategy = one_for_one,
-  MaxRestarts = 1000,
-  MaxSecondsBetweenRestarts = 3600,
-
-  SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
-
-  Restart = transient, % restart only if error
-  Shutdown = 2000,
-  Type = worker,
-
-  AChild = {child, {node_statem, start_link1, [Pid]},
-    Restart, Shutdown, Type, [node_statem]},
+  AChild = {child, {node_supervisor, start_link, []},
+    Restart, Shutdown, Type, [node_supervisor]},
 
   {ok, {SupFlags, [AChild]}}.
-
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-

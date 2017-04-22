@@ -12,7 +12,8 @@
 -behaviour(gen_statem).
 
 %% API
--export([start_link/0, start_ring/0, start_link1/0, connectTo/1, disconnect/0]).
+-export([start_link/0, start_link1/1, start_ring/0, start_link1/0, start_link_singleton/0,
+  connectTo/1, disconnect/0]).
 
 %% gen_statem callbacks
 -export([
@@ -45,15 +46,24 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-
 start_link() ->
   % to change to {local/global, ?SERVER}
-  {ok, PID} = gen_statem:start_link(?MODULE, [], []),
+  {ok, PID} = gen_statem:start_link({local, ?MODULE}, ?MODULE, [], []),
   PID.
 
 start_link1() ->
   % to change to {local/global, ?SERVER}
-  gen_statem:start_link(?MODULE, [], []).
+  gen_statem:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+start_link1(Pid) ->
+  {ok, ChildPid} = gen_statem:start_link(?MODULE, [], []),
+  io:fwrite("~p~n", [ChildPid]),
+  gen_statem:cast(ChildPid, {connectTo, Pid}),
+  io:fwrite("~p connected to ~p~n", [ChildPid, Pid]),
+  {ok, ChildPid}.
+
+start_link_singleton() ->
+  gen_statem:start_link(?MODULE, [singleton], []).
 
 connectTo(Pid) ->
   gen_statem:cast(self(), {connectTo, Pid}),
@@ -74,6 +84,10 @@ start_ring() ->
 
 callback_mode() ->
   state_functions.
+
+init([singleton]) ->
+  io:fwrite("~p : init and work~n", [self()]),
+  {ok, work, #singletonState{}};
 
 init([]) ->
   io:fwrite("~p : init~n", [self()]),

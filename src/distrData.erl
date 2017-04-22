@@ -12,6 +12,7 @@
 -behaviour(application).
 
 % API
+-export([addNode/0, startRing/0]).
 
 %% Application callbacks
 -export([start/2,
@@ -21,6 +22,13 @@
 %%% API functions
 %%%===================================================================
 %% TODO
+
+%% TESTS
+addNode() ->
+  local_supervisor:add_node().
+
+startRing() ->
+  local_supervisor:start_ring().
 
 %%%===================================================================
 %%% Application callbacks
@@ -43,11 +51,21 @@
   {ok, pid(), State :: term()} |
   {error, Reason :: term()}).
 start(_StartType, _StartArgs) ->
-  case node_supervisor:start_link() of
-    {ok, Pid} ->
-      {ok, Pid};
-    Error ->
-      Error
+  case _StartArgs of
+    [] ->
+      case node_supervisor:start_link() of
+        {ok, Pid} ->
+          {ok, Pid};
+        Error ->
+          Error
+      end;
+    [test] ->
+      case local_supervisor:start_link() of
+        {ok, Pid} ->
+          {ok, Pid};
+        Error ->
+          Error
+      end
   end.
 
 %%--------------------------------------------------------------------
