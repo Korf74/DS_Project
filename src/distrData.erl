@@ -12,7 +12,7 @@
 -behaviour(application).
 
 % API
--export([addNode/0, startRing/0, addData/1, requestData/1, size/0]).
+-export([addNode/0, startRing/0, addData/1, requestData/1, size/0, removeNode/0]).
 
 %% Application callbacks
 -export([start/2,
@@ -26,6 +26,9 @@
 %% LOCAL
 addNode() ->
   local_supervisor:add_node().
+
+removeNode() ->
+  local_supervisor:remove_node().
 
 startRing() ->
   local_supervisor:start_ring().

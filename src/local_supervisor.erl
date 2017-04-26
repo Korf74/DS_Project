@@ -12,7 +12,8 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0, add_node/0, start_ring/0, add_data/1, request_data/1, size/0]).
+-export([start_link/0, add_node/0, start_ring/0, add_data/1, request_data/1, size/0
+  ,remove_node/0]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -31,6 +32,13 @@ add_node() ->
   Ret = supervisor:start_child(?MODULE, [ChildPid]),
   io:fwrite("test~n"),
   Ret.
+
+remove_node() ->
+  [{_, Pid, _, _} | _] = supervisor:which_children(?MODULE),
+  [{_, ChildPid, _, _} | _] = supervisor:which_children(Pid),
+  gen_statem:call(ChildPid, stop), % TODO check reply
+  io:fwrite("~p~n", [Pid]),
+  supervisor:terminate_child(?MODULE, Pid).
 
 start_ring() ->
   {ok, Pid} = supervisor:start_child(?MODULE, [singleton]).

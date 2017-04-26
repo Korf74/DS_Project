@@ -48,9 +48,22 @@ handle({testScatter, [Top | Msgs]}, State) ->
       gen_statem:cast(Next, {testScatter, Msgs})
   end;
 
+handle({random_broadcast, I, N, M, Visited, Msg}, State) ->
+  case I of
+    0 ->
+      gen_statem:cast(self(), Msg),
+      case M of
+        X when X > 0 -> sendMsgNext([self() | Visited], {random_broadcast, N, N, M - 1, Msg}, State)
+      end;
+    _ -> sendMsgNext([self() | Visited], {random_broadcast, I - 1, N, M, Msg}, State)
+  end;
+
 handle({newData, Data}, State) ->
   Uid = crypto:hash(md5, Data),
   file:write_file(Uid, Data),
+  Size = askSize(State),
+  N = random:uniform(Size),
+  sendMsgNext([], {random_broadcast, N, N, 1 / Size, {newData, Data}}, State),
   Uid;
 
 handle({requestData, From, Visited, Uid}, State) ->
@@ -88,7 +101,7 @@ retrieveData(State) ->
 findUid([], _) ->
   notfound;
 
-findUid([H | _], Uid) when H == Uid-> found;
+findUid([H | _], Uid) when H == Uid -> found;
 
 findUid([H | Data], Uid) -> findUid(Data, Uid).
 
@@ -107,6 +120,21 @@ requestDataNext(From, Visited, Uid, State) ->
       gen_statem:cast(Next, {requestData, From, [self() | Visited], Uid})
   end.
 
+sendMsgNext(Visited, Msg, State) ->
+  case lists:member(self(), Visited) of
+    false ->
+      case State of
+        #pairState{peer=Next} ->
+          gen_statem:cast(Next, Msg);
+
+        #tripletState{next=Next} ->
+          gen_statem:cast(Next, Msg);
+
+        #genState{next=Next} ->
+          gen_statem:cast(Next, Msg)
+      end
+  end.
+
 sendMsgNext(Visited, Msg, {M, F, A}, State) ->
   case lists:member(self(), Visited) of
     true -> apply(M, F, A);
@@ -123,4 +151,16 @@ sendMsgNext(Visited, Msg, {M, F, A}, State) ->
         #genState{next=Next} ->
           gen_statem:cast(Next, Msg)
       end
+  end.
+
+askSize(State) ->
+  case State of
+    #singletonState{} -> 1;
+
+    #pairState{} -> 2;
+
+    #tripletState{} -> 3;
+
+    #genState{next=Next} ->
+      gen_statem:call(Next, size)
   end.

@@ -75,9 +75,9 @@ handle({call, From}, size, State) ->
   handle_message:handle({size, From, 0, []}, State),
   keep_state_and_data;
 
-handle(cast, stop, State) ->
+handle({call, From}, stop, State) ->
   io:fwrite("~p : received stop~n", [self()]),
-  handle_event:handle(cast, stop, State);
+  handle_event:handle({call, From}, stop, State);
 
 %% for testing
 handle(cast, {testToken, Init}, State) ->

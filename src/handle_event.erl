@@ -51,22 +51,26 @@ handle({call, From}, insertion_request,
   {next_state, addingNode,
     [State, #genState{nnext=element(1, From), next=Next, prev=Prev, pprev=Pprev}]};
 
-handle(cast, stop, #singletonState{}) ->
+handle({call, From}, stop, #singletonState{}) ->
+  gen_statem:reply(From, done),
   stop;
 
-handle(cast, stop, State=#pairState{peer=Peer}) ->
+handle({call, From}, stop, State=#pairState{peer=Peer}) ->
   gen_statem:call(Peer, {removingNode, State}),
+  gen_statem:reply(From, done),
   stop;
 
-handle(cast, stop, State=#tripletState{next=Next, prev=Prev}) ->
+handle({call, From}, stop, State=#tripletState{next=Next, prev=Prev}) ->
   gen_statem:call(Next, {removingNode, State}),
   gen_statem:call(Prev, {removingNode, State}),
 
   gen_statem:cast(Next, removingDone),
   gen_statem:cast(Prev, removingDone),
+
+  gen_statem:reply(From, done),
   stop;
 
-handle(cast, stop,
+handle({call, From}, stop,
     State=#genState{nnext=Nnext, next=Next, prev=Prev, pprev=Nnext}) ->
   gen_statem:call(Nnext, {removingNode, State}),
   gen_statem:call(Next, {removingNode, State}),
@@ -75,9 +79,11 @@ handle(cast, stop,
   gen_statem:cast(Nnext, removingDone),
   gen_statem:cast(Next, removingDone),
   gen_statem:cast(Prev, removingDone),
+
+  gen_statem:reply(From, done),
   stop;
 
-handle(cast, stop,
+handle({call, From}, stop,
     State=#genState{nnext=Nnext, next=Next, prev=Prev, pprev=Pprev}) ->
   gen_statem:call(Nnext, {removingNode, State}),
   gen_statem:call(Next, {removingNode, State}),
@@ -88,6 +94,8 @@ handle(cast, stop,
   gen_statem:cast(Next, removingDone),
   gen_statem:cast(Prev, removingDone),
   gen_statem:cast(Pprev, removingDone),
+
+  gen_statem:reply(From, done),
   stop;
 
 handle(cast, removingDone,
