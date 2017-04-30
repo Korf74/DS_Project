@@ -35,8 +35,7 @@
 %%%===================================================================
 start_link() ->
   % to change to {local/global, ?SERVER}
-  {ok, PID} = gen_statem:start_link({local, ?MODULE}, ?MODULE, [], []),
-  PID.
+  gen_statem:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 start_link1() ->
   % to change to {local/global, ?SERVER}
@@ -61,7 +60,7 @@ disconnect() ->
   gen_statem:cast(self(), stop).
 
 start_ring() ->
-  gen_statem:cast(self(), start).
+  gen_statem:cast(whereis(?MODULE), start).
 
 
 

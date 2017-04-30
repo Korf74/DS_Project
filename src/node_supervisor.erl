@@ -12,7 +12,8 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0, start_link/1, start_link_singleton/0, connectTo/1, disconnect/0, start_ring/0]).
+-export([start_link/0, start_link/1, start_link_singleton/0, connectTo/1, disconnect/0,
+  start_ring/0, add_node/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -51,8 +52,10 @@ disconnect() ->
   whereis(child) ! stop.
 
 start_ring() ->
-  io:fwrite("~p~n", [whereis(node_statem)]),
-  gen_statem:cast(whereis(node_statem), start).
+  node_statem:start_ring().
+
+add_node(Node) ->
+  gen_statem:cast({node_statem, Node}, {connectTo, {self()}}).
 
 %%%===================================================================
 %%% Supervisor callbacks
@@ -105,6 +108,22 @@ init([Pid]) ->
   Type = worker,
 
   AChild = {child, {node_statem, start_link1, [Pid]},
+    Restart, Shutdown, Type, [node_statem]},
+
+  {ok, {SupFlags, [AChild]}};
+
+init([]) ->
+  RestartStrategy = one_for_one,
+  MaxRestarts = 1000,
+  MaxSecondsBetweenRestarts = 3600,
+
+  SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
+
+  Restart = transient, % restart only if error
+  Shutdown = 2000,
+  Type = worker,
+
+  AChild = {child, {node_statem, start_link, []},
     Restart, Shutdown, Type, [node_statem]},
 
   {ok, {SupFlags, [AChild]}}.

@@ -61,9 +61,6 @@ handle({random_broadcast, I, N, M, Visited, Msg}, State) ->
 handle({newData, Data}, State) ->
   Uid = crypto:hash(md5, Data),
   file:write_file(Uid, Data),
-  Size = askSize(State),
-  N = random:uniform(Size),
-  sendMsgNext([], {random_broadcast, N, N, 1 / Size, {newData, Data}}, State),
   Uid;
 
 handle({requestData, From, Visited, Uid}, State) ->

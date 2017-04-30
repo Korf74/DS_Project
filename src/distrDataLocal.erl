@@ -6,13 +6,13 @@
 %%% @end
 %%% Created : 11. Apr 2017 22:38
 %%%-------------------------------------------------------------------
--module(distrData).
+-module(distrDataLocal).
 -author("remi").
 
 -behaviour(application).
 
 % API
--export([addNode/1, startRing/0, addData/1, requestData/1, size/0, removeNode/0]).
+-export([addNode/0, startRing/0, addData/1, requestData/1, size/0, removeNode/0]).
 
 %% Application callbacks
 -export([start/2,
@@ -24,14 +24,14 @@
 %% TODO
 
 %% LOCAL
-addNode(Node) ->
-  node_supervisor:add_node(Node).
+addNode() ->
+  local_supervisor:add_node().
 
 removeNode() ->
   local_supervisor:remove_node().
 
 startRing() ->
-  node_supervisor:start_ring().
+  local_supervisor:start_ring().
 
 addData(Data) ->
   local_supervisor:add_data(Data).
@@ -63,7 +63,7 @@ size() ->
   {ok, pid(), State :: term()} |
   {error, Reason :: term()}).
 start(_StartType, _StartArgs) ->
-  case node_supervisor:start_link() of
+  case local_supervisor:start_link() of
     {ok, Pid} ->
       {ok, Pid};
     Error ->
